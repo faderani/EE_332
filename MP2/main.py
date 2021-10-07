@@ -18,14 +18,18 @@ def load_images(root):
     for path in paths:
         if "bmp" not in path.split(".")[-1]:
             continue
-        image = imageio.imread(os.path.join(root, path))
-        images.append(np.array(image, dtype=np.uint8))
+        image = np.array(imageio.imread(os.path.join(root, path)), dtype=np.float32)
+        image /= 255
+        image = np.where(image > 0.9, 1, image)
+        image = np.where(image < 0.9, 0, image)
+        image = image.astype(np.uint8)
+
+        images.append(image)
         print(f"{os.path.join(root, path)} loaded!")
 
-    imgs = np.array(images, dtype=np.uint8) / 255
+    imgs = np.array(images, dtype=object)
 
-    imgs = np.where(imgs > 0.9, 1, imgs)
-    imgs = np.where(imgs < 0.9, 0, imgs)
+
 
     return imgs
 
@@ -121,11 +125,33 @@ if __name__ == '__main__':
     images = load_images("./data")
     #SE = np.ones((3,3))
     SE = np.array(([0,1,0], [1,1,1], [0,1,0]), dtype=np.uint8)
-    for img in images:
+    for idx, img in enumerate(images):
 
         padded_img = pad_img(img, SE).astype(np.uint8)
 
+        open_res = open_op(padded_img.copy(), SE)
 
+        open_true = opening(padded_img.copy(), SE)
+
+        save_path = os.path.join("./outputs", str(idx) + "_open.jpg")
+        save_path_true = os.path.join("./outputs", str(idx) + "_open_true.jpg")
+
+
+        cv2.imwrite(save_path, open_res * 255)
+        cv2.imwrite(save_path_true, open_true * 255)
+
+    for idx, img in enumerate(images):
+        padded_img = pad_img(img, SE).astype(np.uint8)
+
+        close_res = close_op(padded_img.copy(), SE)
+
+        close_true = closing(padded_img.copy(), SE)
+
+        save_path = os.path.join("./outputs", str(idx) + "_clsoe.jpg")
+        save_path_true = os.path.join("./outputs", str(idx) + "_close_true.jpg")
+
+        cv2.imwrite(save_path, close_res * 255)
+        cv2.imwrite(save_path_true, close_true * 255)
 
 
 
