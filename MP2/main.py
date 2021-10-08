@@ -35,60 +35,63 @@ def load_images(root):
 
 
 
-def dilation_op(img, SE):
+def dilation_op(img, SE, iter = 1):
     assert SE.shape[0] % 2 == 1 and SE.shape[1] % 2 == 1, "SE size should be odd"
     assert SE.shape[0] == SE.shape[1], "SE size should be square"
 
-    start_x = int(SE.shape[0] / 2)
-    start_y = start_x
+    for i in range(iter):
 
-    half_kernel_size = int(SE.shape[0]/2)
+        start_x = int(SE.shape[0] / 2)
+        start_y = start_x
 
-    result = np.zeros(img.shape)
-    for y in range(0, img.shape[0]):
-        for x in range(0, img.shape[1]):
-            if x < start_x or y < start_y or x == img.shape[1] - 1 or y == img.shape[0] - 1: #taking care of edges
-                continue
+        half_kernel_size = int(SE.shape[0]/2)
 
-            if img[y][x] == 1:
-                region = result[y-half_kernel_size: y+half_kernel_size +1 , x-half_kernel_size: x+half_kernel_size +1]
-                result[y-half_kernel_size: y+half_kernel_size +1 , x-half_kernel_size: x+half_kernel_size +1] = np.logical_or(region,SE).astype(np.uint8)
+        result = np.zeros(img.shape)
+        for y in range(0, img.shape[0]):
+            for x in range(0, img.shape[1]):
+                if x < start_x or y < start_y or x == img.shape[1] - 1 or y == img.shape[0] - 1: #taking care of edges
+                    continue
 
-    return result
+                if img[y][x] == 1:
+                    region = result[y-half_kernel_size: y+half_kernel_size +1 , x-half_kernel_size: x+half_kernel_size +1]
+                    result[y-half_kernel_size: y+half_kernel_size +1 , x-half_kernel_size: x+half_kernel_size +1] = np.logical_or(region,SE).astype(np.uint8)
+        img = result
 
-def erosion_op(img, SE):
+    return img
+
+def erosion_op(img, SE, iter = 1):
     assert SE.shape[0] % 2 == 1 and SE.shape[1] % 2 == 1, "SE size should be odd"
     assert SE.shape[0] == SE.shape[1], "SE size should be square"
 
-    start_x = int(SE.shape[0] / 2)
-    start_y = start_x
 
-    half_kernel_size = int(SE.shape[0] / 2)
+    for i in range(iter):
+        start_x = int(SE.shape[0] / 2)
+        start_y = start_x
 
-    result = np.zeros(img.shape)
-    for y in range(0, img.shape[0]):
-        for x in range(0, img.shape[1]):
-            if x < start_x or y < start_y or x == img.shape[1] - 1 or y == img.shape[0] - 1:  # taking care of edges
-                continue
+        half_kernel_size = int(SE.shape[0] / 2)
 
-
-
-            if img[y][x] == 1:
-
-                region = img[y - half_kernel_size: y + half_kernel_size + 1, x - half_kernel_size: x + half_kernel_size + 1]
-                and_op = np.logical_and(region, SE)
+        result = np.zeros(img.shape)
+        for y in range(0, img.shape[0]):
+            for x in range(0, img.shape[1]):
+                if x < start_x or y < start_y or x == img.shape[1] - 1 or y == img.shape[0] - 1:  # taking care of edges
+                    continue
 
 
-                if np.count_nonzero(and_op == 1) == np.count_nonzero(SE == 1):
-                    #result[y - half_kernel_size: y + half_kernel_size + 1, x - half_kernel_size: x + half_kernel_size + 1] = 1
-                    result[y][x] = 1
+
+                if img[y][x] == 1:
+
+                    region = img[y - half_kernel_size: y + half_kernel_size + 1, x - half_kernel_size: x + half_kernel_size + 1]
+                    and_op = np.logical_and(region, SE)
 
 
-                # if np.array_equal(img[y - half_kernel_size: y + half_kernel_size + 1, x - half_kernel_size: x + half_kernel_size + 1], SE):
-                #     result[y - half_kernel_size: y + half_kernel_size + 1, x - half_kernel_size: x + half_kernel_size + 1] = 1
+                    if np.count_nonzero(and_op == 1) == np.count_nonzero(SE == 1):
+                        result[y][x] = 1
+        img = result
 
 
-    return result
+
+
+    return img
 
 
 def open_op(img, SE):
@@ -106,14 +109,6 @@ def bound_op(img, SE):
     er_res = erosion(img, SE)
     return img - er_res
 
-
-
-
-
-
-
-
-
 def pad_img(img, SE):
     return np.pad(img, int(SE.shape[0]/2), constant_values=0)
 
@@ -123,8 +118,41 @@ def pad_img(img, SE):
 if __name__ == '__main__':
 
     images = load_images("./data")
-    #SE = np.ones((3,3))
-    SE = np.array(([0,1,0], [1,1,1], [0,1,0]), dtype=np.uint8)
+    SE = np.ones((3,3))
+    #SE = np.array(([0,1,0], [1,1,1], [0,1,0]), dtype=np.uint8)
+    for idx, img in enumerate(images):
+
+        padded_img = pad_img(img, SE).astype(np.uint8)
+
+        dil_res = dilation_op(padded_img.copy(), SE, iter=4)
+
+
+        bounds = bound_op(dil_res.copy(), SE)
+
+
+        save_path_dil = os.path.join("./outputs", str(idx) + "_dilation.jpg")
+        save_path_bound = os.path.join("./outputs", str(idx) + "_boundary.jpg")
+
+        cv2.imwrite(save_path_dil, dil_res * 255)
+        cv2.imwrite(save_path_bound, bounds * 255)
+
+    for idx, img in enumerate(images):
+        padded_img = pad_img(img, SE).astype(np.uint8)
+
+        eros_res = erosion_op(padded_img.copy(), SE)
+
+        save_path = os.path.join("./outputs", str(idx) + "_erosion.jpg")
+
+        cv2.imwrite(save_path, eros_res * 255)
+
+
+
+
+
+
+
+
+
     for idx, img in enumerate(images):
 
         padded_img = pad_img(img, SE).astype(np.uint8)
@@ -147,11 +175,36 @@ if __name__ == '__main__':
 
         close_true = closing(padded_img.copy(), SE)
 
-        save_path = os.path.join("./outputs", str(idx) + "_clsoe.jpg")
+        save_path = os.path.join("./outputs", str(idx) + "_close.jpg")
         save_path_true = os.path.join("./outputs", str(idx) + "_close_true.jpg")
 
         cv2.imwrite(save_path, close_res * 255)
         cv2.imwrite(save_path_true, close_true * 255)
+
+
+
+
+
+    # for idx, img in enumerate(images):
+    #     padded_img = pad_img(img, SE).astype(np.uint8)
+    #
+    #     open_res = open_op(padded_img.copy(), SE)
+    #
+    #     close_res = close_op(open_res.copy(), SE)
+    #
+    #     save_path = os.path.join("./outputs", str(idx) + "_open_close.jpg")
+    #
+    #     cv2.imwrite(save_path, close_res * 255)
+    #
+    # for idx, img in enumerate(images):
+    #     padded_img = pad_img(img, SE).astype(np.uint8)
+    #
+    #     close_res = close_op(padded_img.copy(), SE)
+    #     open_res = open_op(close_res.copy(), SE)
+    #
+    #     save_path = os.path.join("./outputs", str(idx) + "_close_open.jpg")
+    #
+    #     cv2.imwrite(save_path, close_res * 255)
 
 
 
