@@ -66,7 +66,8 @@ def segment_skin(img, H, hue_edges, sat_edges):
 
     h, w, _ = img.shape
 
-    segmented_img = np.zeros(img.shape)
+    segmented_img = np.zeros(img.shape, dtype=np.float32)
+
 
     for x in range(int(w)):
         for y in range(int(h)):
@@ -77,8 +78,8 @@ def segment_skin(img, H, hue_edges, sat_edges):
             if h_idx == 0 or s_idx == 0 or h_idx == len(hue_edges)  or s_idx == len(sat_edges) :
                 continue
 
-            if H[s_idx-1][h_idx-1] > 0.0001:
-                segmented_img[y][x] = 255
+            if H[s_idx-1][h_idx-1] > 0.000000001:
+                segmented_img[y][x] = img[y][x]
 
     return segmented_img
 
@@ -94,9 +95,11 @@ if __name__ == '__main__':
 
     test_imgs = load_test_data("./testing_data")
 
-    seg_img = segment_skin(test_imgs[2].copy(), H, hue_edges, sat_edges)
 
-    cv2.imwrite("output.jpg", seg_img)
+    for idx, img in enumerate(test_imgs):
+        seg_img = segment_skin(img.copy(), H, hue_edges, sat_edges)
+        seg_img = cv2.cvtColor(seg_img, cv2.COLOR_HSV2BGR)
+        cv2.imwrite(f"./results/output{idx}.jpg", seg_img)
 
     # fig = plt.figure(figsize=(7, 3))
     # ax = fig.add_subplot(131, title='imshow: square bins')
