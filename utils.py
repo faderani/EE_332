@@ -14,7 +14,8 @@ def load_test_data(root):
         if "bmp" not in path.split(".")[-1]:
             continue
         image = np.array(imageio.imread(os.path.join(root, path)), dtype=np.float32)
-        image = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
+        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        #image = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
 
         images.append(image)
         print(f"{os.path.join(root, path)} loaded!")
