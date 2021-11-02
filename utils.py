@@ -40,7 +40,7 @@ def convolve(img, SE, iter = 1):
     assert SE.shape[0] % 2 == 1 and SE.shape[1] % 2 == 1, "SE size should be odd"
     assert SE.shape[0] == SE.shape[1], "SE size should be square"
 
-    org_y, org_x = img.shape
+
     img = pad_img(img, SE).astype(np.uint8)
 
     for i in range(iter):

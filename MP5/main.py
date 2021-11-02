@@ -40,47 +40,46 @@ def image_gradient(img):
     cv2.imwrite("output.jpg", mag)
 
     #theta = np.arctan2(y_res, x_res)
-    theta = np.arctan(y_res, x_res)
+    theta = np.arctan2(y_res, x_res)
     return mag, theta
 
 def look_up_table(rad):
-    if rad >=math.pi/8 and rad<3*math.pi/8:
-        return [(1,0),(2,1)]
-    elif rad >=3*math.pi/8 and rad<5*math.pi/8:
-        return [(0,0),(2,0)]
-    elif rad >=5*math.pi/8 and rad<7*math.pi/8:
-        return [(1,0),(0,1)]
-    elif rad >=7*math.pi/8 and rad<9*math.pi/8:
-        return [(0,0),(0,2)]
-    elif rad >=9*math.pi/8 and rad<11*math.pi/8:
-        return [(0,1),(1,2)]
-    elif rad >=11*math.pi/8 and rad<13*math.pi/8:
-        return [(0,2),(2,2)]
-    elif rad >=13*math.pi/8 and rad<15*math.pi/8:
-        return [(1,2),(2,1)]
-    elif rad >=15*math.pi/8 and rad<math.pi/8:
-        return [(2,0),(2,2)]
-
+    if (rad >=math.pi/8 and rad<3*math.pi/8) or (rad >=-7*math.pi/8 and rad<-5*math.pi/8):
+        return [(0,0),(2,2)]
+    elif (rad >=3*math.pi/8 and rad<5*math.pi/8) or (rad >=-5*math.pi/8 and rad<-3*math.pi/8):
+        return [(0,1),(2,1)]
+    elif (rad >=5*math.pi/8 and rad<7*math.pi/8) or (rad >=-3*math.pi/8 and rad<-1*math.pi/8):
+        return [(0,2),(2,0)]
+    elif (rad >=7*math.pi/8 or rad<-7*math.pi/8) or (rad >=-1*math.pi/8 and rad<math.pi/8):
+        return [(1,0),(1,2)]
+    else:
+        print(rad/math.pi)
 
 def non_maxima_sup(img, mag, theta):
 
-
-    cols,rows = img.shape
+    img = pad_img(img, np.zeros((3,3))).astype(np.uint8)
 
     res = np.zeros(mag.shape)
 
-    for x in range(rows):
-        for y in range(cols):
-            indices = look_up_table(theta[y][x])
-            region = np.zeros((3,3))
-            region = mag[x:x+3][y:y+3]
+    start_x = int(3 / 2)
+    start_y = start_x
 
-            #if mag[y][x] > mag[y + ]
+    half_kernel_size = int(3 / 2)
 
+    for y in range(0, mag.shape[0]):
+        for x in range(0, mag.shape[1]):
+            if x < start_x or y < start_y or x >= mag.shape[1] - start_x or y >= mag.shape[
+                0] - start_y:  # taking care of edges
+                continue
 
+            region = mag[y - half_kernel_size: y + half_kernel_size + 1,
+                     x - half_kernel_size: x + half_kernel_size + 1]
+            rad = theta[y][x]
+            indices = look_up_table(rad)
+            if region[indices[0][1]][indices[0][0]] <= region[1][1] and region[indices[1][1]][indices[1][0]] <= region[1][1]:
+                res[y, x] = mag[y][x]
 
-
-
+    return res
 
 
 
@@ -89,9 +88,11 @@ if __name__ == '__main__':
 
     img = cv2.cvtColor(images[1].astype(np.uint8), cv2.COLOR_BGR2GRAY)
     img = gaussian_smoothing(img.copy(), 5, 1)
-
-
     mag, theta = image_gradient(img)
+    cv2.imwrite("output1.jpg", mag)
+    res = non_maxima_sup(img, mag, theta)
+    cv2.imwrite("output2.jpg", res)
+
 
 
 
