@@ -1,9 +1,10 @@
-import matplotlib.pyplot as plt
 import numpy as np
 
 from utils import *
 import math
 import cv2
+from skimage import filters
+
 
 
 
@@ -15,18 +16,13 @@ def get_gaussian_kernel(kernel_s, sigma):
     return kernel / np.sum(kernel)
 
 def get_sobel_kernel():
-    # g_x = np.asarray([[-1,0,1],[-2,0,2],[-1,0,1]], dtype=int)
-    # g_y = g_x.T
+
     g_x = np.array([[-1.0, 0.0, 1.0], [-2.0, 0.0, 2.0], [-1.0, 0.0, 1.0]])
     g_y = np.flip(g_x.T, axis=0)
-    #g_y = np.array([[1.0, 2.0, 1.0], [0.0, 0.0, 0.0], [-1.0, -2.0, -1.0]])
     return g_x, g_y
 
 def gaussian_smoothing(img, kernel_s, sigma):
     kernel = get_gaussian_kernel(kernel_s, sigma)
-    #num_ch = img.shape[2]
-    res_map = np.zeros(img.shape)
-    #for ch in range(num_ch):
     res_map = convolve(img, kernel)
 
     return res_map
@@ -35,8 +31,8 @@ def image_gradient(img):
 
     g_x, g_y = get_sobel_kernel()
 
-    x_res = convolve(img, g_x)
-    y_res = convolve(img, g_y)
+    x_res = convolution(img, g_x)
+    y_res = convolution(img, g_y)
 
     mag = np.sqrt(np.square(x_res) + np.square(y_res))
     mag *= 255.0 / mag.max()
@@ -104,7 +100,7 @@ def threshold(image, low, high, weak):
     return output
 
 
-def non_max_suppression(gradient_magnitude, gradient_direction, verbose):
+def non_max_suppression(gradient_magnitude, gradient_direction):
     image_row, image_col = gradient_magnitude.shape
 
     output = np.zeros(gradient_magnitude.shape)
@@ -172,58 +168,58 @@ def link_weak_strong(mag):
                 elif mag[y][x] == high:
                     mag[y][x] = 255
 
-
-        for x in range(width - 2, 0, -1):
-            for y in range(1, height - 1):
-                top = mag[y - 1][x] == 255
-                top_left = mag[y-1][x-1] == 255
-                top_right = mag[y-1][x+1] == 255
-                bottom = mag[y + 1][x] == 255
-                bottom_right = mag[y+1][x+1] == 255
-                bottom_left = mag[y+1][x-1] == 255
-                right = mag[y][x + 1] == 255
-                left = mag[y][x - 1] == 255
-                if mag[y][x] == mid:
-                    if top or bottom or right or left or top_left or top_right or bottom_left or bottom_right:
-                        mag[y][x] = 255
-
-                elif mag[y][x] == high:
-                    mag[y][x] = 255
-
-        for x in range(width - 2, 0, -1):
-            for y in range(height - 2, 0, -1):
-                top = mag[y - 1][x] == 255
-                top_left = mag[y-1][x-1] == 255
-                top_right = mag[y-1][x+1] == 255
-                bottom = mag[y + 1][x] == 255
-                bottom_right = mag[y+1][x+1] == 255
-                bottom_left = mag[y+1][x-1] == 255
-                right = mag[y][x + 1] == 255
-                left = mag[y][x - 1] == 255
-                if mag[y][x] == mid:
-                    if top or bottom or right or left or top_left or top_right or bottom_left or bottom_right:
-                        mag[y][x] = 255
-
-                elif mag[y][x] == high:
-                    mag[y][x] = 255
-
-
-        for x in range(1, width-2):
-            for y in range(height - 2, 0, -1):
-                top = mag[y - 1][x] == 255
-                top_left = mag[y-1][x-1] == 255
-                top_right = mag[y-1][x+1] == 255
-                bottom = mag[y + 1][x] == 255
-                bottom_right = mag[y+1][x+1] == 255
-                bottom_left = mag[y+1][x-1] == 255
-                right = mag[y][x + 1] == 255
-                left = mag[y][x - 1] == 255
-                if mag[y][x] == mid:
-                    if top or bottom or right or left or top_left or top_right or bottom_left or bottom_right:
-                        mag[y][x] = 255
-
-                elif mag[y][x] == high:
-                    mag[y][x] = 255
+        #
+        # for x in range(width - 2, 0, -1):
+        #     for y in range(1, height - 1):
+        #         top = mag[y - 1][x] == 255
+        #         top_left = mag[y-1][x-1] == 255
+        #         top_right = mag[y-1][x+1] == 255
+        #         bottom = mag[y + 1][x] == 255
+        #         bottom_right = mag[y+1][x+1] == 255
+        #         bottom_left = mag[y+1][x-1] == 255
+        #         right = mag[y][x + 1] == 255
+        #         left = mag[y][x - 1] == 255
+        #         if mag[y][x] == mid:
+        #             if top or bottom or right or left or top_left or top_right or bottom_left or bottom_right:
+        #                 mag[y][x] = 255
+        #
+        #         elif mag[y][x] == high:
+        #             mag[y][x] = 255
+        #
+        # for x in range(width - 2, 0, -1):
+        #     for y in range(height - 2, 0, -1):
+        #         top = mag[y - 1][x] == 255
+        #         top_left = mag[y-1][x-1] == 255
+        #         top_right = mag[y-1][x+1] == 255
+        #         bottom = mag[y + 1][x] == 255
+        #         bottom_right = mag[y+1][x+1] == 255
+        #         bottom_left = mag[y+1][x-1] == 255
+        #         right = mag[y][x + 1] == 255
+        #         left = mag[y][x - 1] == 255
+        #         if mag[y][x] == mid:
+        #             if top or bottom or right or left or top_left or top_right or bottom_left or bottom_right:
+        #                 mag[y][x] = 255
+        #
+        #         elif mag[y][x] == high:
+        #             mag[y][x] = 255
+        #
+        #
+        # for x in range(1, width-2):
+        #     for y in range(height - 2, 0, -1):
+        #         top = mag[y - 1][x] == 255
+        #         top_left = mag[y-1][x-1] == 255
+        #         top_right = mag[y-1][x+1] == 255
+        #         bottom = mag[y + 1][x] == 255
+        #         bottom_right = mag[y+1][x+1] == 255
+        #         bottom_left = mag[y+1][x-1] == 255
+        #         right = mag[y][x + 1] == 255
+        #         left = mag[y][x - 1] == 255
+        #         if mag[y][x] == mid:
+        #             if top or bottom or right or left or top_left or top_right or bottom_left or bottom_right:
+        #                 mag[y][x] = 255
+        #
+        #         elif mag[y][x] == high:
+        #             mag[y][x] = 255
 
     mag[mag == mid] = 0
     return mag
@@ -233,54 +229,93 @@ def run_pipeline(img, save_path, low, high, weak):
     img = cv2.cvtColor(img.astype(np.uint8), cv2.COLOR_BGR2GRAY)
     img = gaussian_smoothing(img.copy(), 3, 1)
     mag, theta = image_gradient(img)
-    res = non_max_suppression(mag, theta, verbose=False)
+    res = non_max_suppression(mag, theta)
+    #res = non_maxima_sup(img, mag, theta)
+    cv2.imwrite(save_path, res)
+    return
+
     res = threshold(res, low, high, weak)
     res = link_weak_strong(res)
-    cv2.imwrite(save_path, res)
+
 
 def run_pipeline_cv(img, save_path, low, high):
     img = cv2.cvtColor(img.astype(np.uint8), cv2.COLOR_BGR2GRAY)
-    img = gaussian_smoothing(img.copy(), 3, 1)
+    img = gaussian_smoothing(img.copy(), 3, 1).astype(np.uint8)
     edges = cv2.Canny(img, low, high)
     cv2.imwrite(save_path, edges)
 
 
-# def non_maxima_sup(img, mag, theta):
-#
-#     img = pad_img(img, np.zeros((3,3))).astype(np.uint8)
-#
-#     res = np.zeros(mag.shape)
-#
-#     start_x = int(3 / 2)
-#     start_y = start_x
-#
-#     half_kernel_size = int(3 / 2)
-#
-#     for y in range(0, mag.shape[0]):
-#         for x in range(0, mag.shape[1]):
-#             if x < start_x or y < start_y or x >= mag.shape[1] - start_x or y >= mag.shape[
-#                 0] - start_y:  # taking care of edges
-#                 continue
-#
-#             region = mag[y - half_kernel_size: y + half_kernel_size + 1,
-#                      x - half_kernel_size: x + half_kernel_size + 1]
-#             rad = theta[y][x]
-#             indices = look_up_table(rad)
-#             if region[indices[0][1]][indices[0][0]] <= region[1][1] and region[indices[1][1]][indices[1][0]] <= region[1][1]:
-#                 res[y, x] = mag[y][x]
-#             else:
-#                 res[y, x] = 0
-#
-#     return res
+def sobel_cv(img, save_path):
+    img = cv2.cvtColor(img.astype(np.uint8), cv2.COLOR_BGR2GRAY)
+    img = gaussian_smoothing(img.copy(), 3, 1).astype(np.uint8)
+    g_x = cv2.Sobel(img, ddepth=cv2.CV_32F, dx=1, dy=0, ksize=3)
+    g_y = cv2.Sobel(img, ddepth=cv2.CV_32F, dx=0, dy=1, ksize=3)
+
+    g_x = cv2.convertScaleAbs(g_x)
+    g_y = cv2.convertScaleAbs(g_y)
+
+    mag = cv2.addWeighted(g_x, 0.5, g_y, 0.5, 0)
+
+    cv2.imwrite(save_path, mag)
+
+def roberts_scikit(img, save_path):
+    img = cv2.cvtColor(img.astype(np.uint8), cv2.COLOR_BGR2GRAY)
+    img = gaussian_smoothing(img.copy(), 3, 1)
+    edge_roberts = filters.roberts(img)
+    cv2.imwrite(save_path, edge_roberts)
+
+
+def zero_crossing(img, save_path):
+    img = cv2.cvtColor(img.astype(np.uint8), cv2.COLOR_BGR2GRAY)
+    img = gaussian_smoothing(img.copy(), 3, 1)
+    lap = np.sign(filters.laplace(img))
+    lap = np.pad(lap, ((0, 1), (0, 1)))
+    diff_x = lap[:-1, :-1] - lap[:-1, 1:] < 0
+    diff_y = lap[:-1, :-1] - lap[1:, :-1] < 0
+    edges = np.logical_or(diff_x, diff_y).astype(float)
+
+    cv2.imwrite(save_path, edges*255)
+
+
+
+def non_maxima_sup(img, mag, theta):
+
+    img = pad_img(img, np.zeros((3,3))).astype(np.uint8)
+
+    res = np.zeros(mag.shape)
+
+    start_x = int(3 / 2)
+    start_y = start_x
+
+    half_kernel_size = int(3 / 2)
+
+    for y in range(0, mag.shape[0]):
+        for x in range(0, mag.shape[1]):
+            if x < start_x or y < start_y or x >= mag.shape[1] - start_x or y >= mag.shape[
+                0] - start_y:  # taking care of edges
+                continue
+
+            region = mag[y - half_kernel_size: y + half_kernel_size + 1,
+                     x - half_kernel_size: x + half_kernel_size + 1]
+            rad = theta[y][x]
+            indices = look_up_table(rad)
+            if region[indices[0][1]][indices[0][0]] <= region[1][1] and region[indices[1][1]][indices[1][0]] <= region[1][1]:
+                res[y, x] = mag[y][x]
+            else:
+                res[y, x] = 0
+
+    return res
 
 
 
 if __name__ == '__main__':
     images = load_test_data("./data")
     for idx, im in enumerate(images):
-        #run_pipeline(im, f"./outputs/{idx}.jpg", low=10, high=20, weak=50)
-        run_pipeline_cv(im, f"./outputs/{idx}.jpg", low=10, high=20)
-
+        run_pipeline(im.copy(), f"./outputs/my_implementation/{idx}.jpg", low=10, high=20, weak=80)
+        run_pipeline_cv(im.copy(), f"./outputs/canny_opencv/{idx}.jpg", low=10, high=20)
+        sobel_cv(im.copy(), f"./outputs/sobel/{idx}.jpg")
+        roberts_scikit(im.copy(), f"./outputs/roberts/{idx}.jpg")
+        zero_crossing(im.copy(), f"./outputs/zero_cross/{idx}.jpg")
 
 
 
