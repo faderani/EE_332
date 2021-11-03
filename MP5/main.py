@@ -311,8 +311,8 @@ def zero_crossing(img, save_path):
 if __name__ == '__main__':
     images = load_test_data("./data")
     for idx, im in enumerate(images):
-        run_pipeline(im.copy(), f"./outputs/my_implementation/{idx}.jpg", low=10, high=20, weak=80)
-        run_pipeline_cv(im.copy(), f"./outputs/canny_opencv/{idx}.jpg", low=10, high=20)
+        run_pipeline(im.copy(), f"./outputs/my_implementation/{idx}.jpg", low=30, high=60, weak=80)
+        run_pipeline_cv(im.copy(), f"./outputs/canny_opencv/{idx}.jpg", low=30, high=60)
         sobel_cv(im.copy(), f"./outputs/sobel/{idx}.jpg")
         roberts_scikit(im.copy(), f"./outputs/roberts/{idx}.jpg")
         zero_crossing(im.copy(), f"./outputs/zero_cross/{idx}.jpg")
