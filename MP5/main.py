@@ -31,8 +31,8 @@ def image_gradient(img):
 
     g_x, g_y = get_sobel_kernel()
 
-    x_res = convolution(img, g_x)
-    y_res = convolution(img, g_y)
+    x_res = convolve(img, g_x)
+    y_res = convolve(img, g_y)
 
     mag = np.sqrt(np.square(x_res) + np.square(y_res))
     mag *= 255.0 / mag.max()
@@ -231,11 +231,11 @@ def run_pipeline(img, save_path, low, high, weak):
     mag, theta = image_gradient(img)
     res = non_max_suppression(mag, theta)
     #res = non_maxima_sup(img, mag, theta)
-    cv2.imwrite(save_path, res)
-    return
+
 
     res = threshold(res, low, high, weak)
     res = link_weak_strong(res)
+    cv2.imwrite(save_path, res)
 
 
 def run_pipeline_cv(img, save_path, low, high):
@@ -278,33 +278,33 @@ def zero_crossing(img, save_path):
 
 
 
-def non_maxima_sup(img, mag, theta):
-
-    img = pad_img(img, np.zeros((3,3))).astype(np.uint8)
-
-    res = np.zeros(mag.shape)
-
-    start_x = int(3 / 2)
-    start_y = start_x
-
-    half_kernel_size = int(3 / 2)
-
-    for y in range(0, mag.shape[0]):
-        for x in range(0, mag.shape[1]):
-            if x < start_x or y < start_y or x >= mag.shape[1] - start_x or y >= mag.shape[
-                0] - start_y:  # taking care of edges
-                continue
-
-            region = mag[y - half_kernel_size: y + half_kernel_size + 1,
-                     x - half_kernel_size: x + half_kernel_size + 1]
-            rad = theta[y][x]
-            indices = look_up_table(rad)
-            if region[indices[0][1]][indices[0][0]] <= region[1][1] and region[indices[1][1]][indices[1][0]] <= region[1][1]:
-                res[y, x] = mag[y][x]
-            else:
-                res[y, x] = 0
-
-    return res
+# def non_maxima_sup(img, mag, theta):
+#
+#     img = pad_img(img, np.zeros((3,3))).astype(np.uint8)
+#
+#     res = np.zeros(mag.shape)
+#
+#     start_x = int(3 / 2)
+#     start_y = start_x
+#
+#     half_kernel_size = int(3 / 2)
+#
+#     for y in range(0, mag.shape[0]):
+#         for x in range(0, mag.shape[1]):
+#             if x < start_x or y < start_y or x >= mag.shape[1] - start_x or y >= mag.shape[
+#                 0] - start_y:  # taking care of edges
+#                 continue
+#
+#             region = mag[y - half_kernel_size: y + half_kernel_size + 1,
+#                      x - half_kernel_size: x + half_kernel_size + 1]
+#             rad = theta[y][x]
+#             indices = look_up_table(rad)
+#             if region[indices[0][1]][indices[0][0]] <= region[1][1] and region[indices[1][1]][indices[1][0]] <= region[1][1]:
+#                 res[y, x] = mag[y][x]
+#             else:
+#                 res[y, x] = 0
+#
+#     return res
 
 
 
