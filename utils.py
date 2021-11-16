@@ -23,6 +23,26 @@ def load_test_data(root):
     imgs = np.asarray(images, dtype=object)
     return imgs
 
+def load_seq(root):
+    """load jpg images of a video from root into an np array"""
+
+    paths = os.listdir(root)
+
+    images = []
+
+    for path in paths:
+        if "jpg" not in path.split(".")[-1]:
+            continue
+        image = np.array(imageio.imread(os.path.join(root, path)), dtype=np.float32)
+        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        # image = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
+
+        images.append(image)
+        print(f"{os.path.join(root, path)} loaded!")
+
+    imgs = np.asarray(images, dtype=object)
+    return imgs
+
 
 
 
